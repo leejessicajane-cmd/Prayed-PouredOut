@@ -77,7 +77,8 @@ exports.handler = async (event) => {
 
   const site = process.env.URL || `https://${event.headers.host}`;
   const base = {
-    automatic_tax: { enabled: true },
+    // Sales tax is OFF until the Netlify variable TAX_ENABLED is set to "true"
+    automatic_tax: { enabled: process.env.TAX_ENABLED === "true" },
     billing_address_collection: "required",
     shipping_address_collection: { allowed_countries: ["US"] },
     phone_number_collection: { enabled: true },
