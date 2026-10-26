@@ -36,8 +36,8 @@
 
     <article class="card">
       <h2>The Paint Kit</h2>
-      <p class="price">$20<span>/month</span></p>
-      <p class="note">+ $8 flat shipping · plus sales tax · only 10 a month</p>
+      <p class="price">$15<span>/month</span></p>
+      <p class="note">+ $8 flat shipping or free local pickup · plus sales tax · only 10 a month</p>
       <p class="sub">Quiet your heart and create with purpose.</p>
       <ul>
         <li>8x10 canvas with the month's art traced on</li>
@@ -45,7 +45,24 @@
         <li>Brush</li>
         <li>Step-by-step painting instructions</li>
       </ul>
+      <fieldset class="delivery">
+        <legend>How would you like it?</legend>
+        <label><input type="radio" name="paint_delivery" value="ship" checked> Ship it to me (+$8/month)</label>
+        <label><input type="radio" name="paint_delivery" value="pickup"> Local pickup in Spanish Fort (free)</label>
+      </fieldset>
       <button data-item="paint_kit">Subscribe</button>
+    </article>
+
+    <article class="card">
+      <h2>Post + Paint</h2>
+      <p class="price">$25<span>/month</span></p>
+      <p class="note">+ $8 flat shipping · plus sales tax · only 10 a month</p>
+      <p class="sub">The Post Kit and the Paint Kit together.</p>
+      <ul>
+        <li>Everything in the Post Kit</li>
+        <li>Everything in the Paint Kit</li>
+      </ul>
+      <button data-item="post_paint">Subscribe</button>
     </article>
 
     <article class="card">
@@ -98,7 +115,10 @@
         const res = await fetch("/.netlify/functions/create-checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ item: btn.dataset.item, quantity: 1 }),
+          body: JSON.stringify({
+            item: btn.dataset.item, quantity: 1,
+            delivery: (document.querySelector('input[name="paint_delivery"]:checked') || {}).value,
+          }),
         });
         const data = await res.json();
         if (data.url) { window.location = data.url; return; }
