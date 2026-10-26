@@ -8,9 +8,9 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 // ---- Settings you may want to change ----
 const TZ = "America/Chicago";
 const BILL_DAY = 20;                       // every subscription bills on the 20th
-const FOUNDING_DEADLINE = "2026-11-10";    // subscribe by this date = free November kit
+const FOUNDING_DEADLINE = "2026-11-10";    // Post Kit subscribers by this date get the November Post Kit free
 const PAINT_KIT_LIMIT = 10;                // Paint Kits available per month
-const BANNER_SHIPPING_CENTS = 1000;        // $10.00 flat-rate banner shipping — CHANGE to your real rate
+const BANNER_SHIPPING_CENTS = 1000;        // $10.00 flat-rate banner shipping
 // -----------------------------------------
 
 // Today's date in Central time, as {y, m, d}
@@ -32,11 +32,14 @@ function nextBillingAnchor(now = new Date()) {
   return Math.floor(Date.UTC(year, month - 1, BILL_DAY, 15, 0, 0) / 1000);
 }
 
-// Which month's kit the first one will be (for your packing list)
-function firstKitMonth(now = new Date()) {
+// Which month's kit the first one will be (for your packing list).
+// The free founding November kit applies to the Post Kit only.
+function firstKitMonth(now = new Date(), item = "post_kit") {
   const { y, m, d } = centralToday(now);
   const iso = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  if (iso <= FOUNDING_DEADLINE) return { label: "November 2026 (free founding kit)", founding: true };
+  if (item === "post_kit" && iso <= FOUNDING_DEADLINE) {
+    return { label: "November 2026 (free founding Post Kit)", founding: true };
+  }
   let add = d <= BILL_DAY ? 1 : 2;
   const dt = new Date(Date.UTC(y, m - 1 + add, 1));
   const label = dt.toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -113,7 +116,7 @@ exports.handler = async (event) => {
       }
       if (pickup) delete base.shipping_address_collection; // no mailing address needed for pickup
 
-      const first = firstKitMonth();
+      const first = firstKitMonth(new Date(), item);
       const anchor = nextBillingAnchor();
       const subscription_data = {
         metadata: {
@@ -167,7 +170,7 @@ exports.handler = async (event) => {
         }],
         shipping_options: [
           { shipping_rate_data: {
-              display_name: "Local delivery (Spanish Fort / Baldwin County)",
+              display_name: "Free local pickup (Spanish Fort)",
               type: "fixed_amount", fixed_amount: { amount: 0, currency: "usd" },
               tax_behavior: "exclusive", tax_code: "txcd_92010001" } },
           { shipping_rate_data: {
