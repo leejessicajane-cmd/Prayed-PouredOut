@@ -49,11 +49,14 @@ async function priceId(lookupKey) {
   return res.data[0].id;
 }
 
-async function paintKitsTaken(paintPriceId) {
+// Counts Paint Kits already spoken for: Paint Kit and Post + Paint subscriptions both use one.
+async function paintKitsTaken(paintPriceIds) {
   let count = 0;
-  for (const status of ["active", "trialing", "past_due"]) {
-    for await (const sub of stripe.subscriptions.list({ price: paintPriceId, status, limit: 100 })) {
-      if (!sub.cancel_at_period_end) count += 1;
+  for (const price of paintPriceIds) {
+    for (const status of ["active", "trialing", "past_due"]) {
+      for await (const sub of stripe.subscriptions.list({ price, status, limit: 100 })) {
+        if (!sub.cancel_at_period_end) count += 1;
+      }
     }
   }
   return count;
@@ -68,9 +71,9 @@ const json = (statusCode, body) => ({
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
 
-  let item, quantity;
+  let item, quantity, delivery;
   try {
-    ({ item, quantity } = JSON.parse(event.body || "{}"));
+    ({ item, quantity, delivery } = JSON.parse(event.body || "{}"));
   } catch {
     return json(400, { error: "Bad request" });
   }
@@ -90,23 +93,33 @@ exports.handler = async (event) => {
   try {
     let params;
 
-    if (item === "post_kit" || item === "paint_kit") {
+    if (item === "post_kit" || item === "paint_kit" || item === "post_paint") {
       const lineItems = [];
+      // Paint Kit can be shipped ($8/mo) or picked up locally ($0/mo). Post + Paint always ships.
+      const pickup = item === "paint_kit" && delivery === "pickup";
       if (item === "post_kit") {
         lineItems.push({ price: await priceId("post_kit_monthly"), quantity: 1 });
       } else {
         const paintPrice = await priceId("paint_kit_monthly");
-        if ((await paintKitsTaken(paintPrice)) >= PAINT_KIT_LIMIT) {
+        const postPaintPrice = await priceId("post_paint_monthly");
+        if ((await paintKitsTaken([paintPrice, postPaintPrice])) >= PAINT_KIT_LIMIT) {
           return json(409, { error: "The Paint Kit is full this month. Please check back next month!" });
         }
-        lineItems.push({ price: paintPrice, quantity: 1 });
-        lineItems.push({ price: await priceId("paint_kit_shipping_monthly"), quantity: 1 });
+        lineItems.push({ price: item === "post_paint" ? postPaintPrice : paintPrice, quantity: 1 });
+        lineItems.push({
+          price: await priceId(pickup ? "local_pickup_monthly" : "paint_kit_shipping_monthly"),
+          quantity: 1,
+        });
       }
+      if (pickup) delete base.shipping_address_collection; // no mailing address needed for pickup
 
       const first = firstKitMonth();
       const anchor = nextBillingAnchor();
       const subscription_data = {
-        metadata: { kit: item, first_kit: first.label, founding_member: String(first.founding) },
+        metadata: {
+          kit: item, delivery: pickup ? "local_pickup" : "ship",
+          first_kit: first.label, founding_member: String(first.founding),
+        },
       };
       if (anchor) {
         subscription_data.billing_cycle_anchor = anchor;
@@ -120,9 +133,10 @@ exports.handler = async (event) => {
         subscription_data,
         custom_text: {
           submit: {
-            message: anchor
+            message: (anchor
               ? `Your card is saved today and first charged on the ${BILL_DAY}th. Your first kit: ${first.label}.`
-              : `Your first kit: ${first.label}. You'll be billed on the ${BILL_DAY}th each month.`,
+              : `Your first kit: ${first.label}. You'll be billed on the ${BILL_DAY}th each month.`)
+              + (pickup ? " Local pickup in Spanish Fort: I'll email you pickup details each month." : ""),
           },
         },
       };
