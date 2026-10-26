@@ -11,7 +11,6 @@ Use card `4242 4242 4242 4242`, any future date, any CVC, and an Alabama address
 Check in Stripe → Subscriptions that the next invoice date is the 20th and that sales tax shows on it.
 
 ## Before you go live
-- In `netlify/functions/create-checkout.js`, change `BANNER_SHIPPING_CENTS` (now $10.00) to your real banner shipping rate.
 - Activate your live Stripe account, recreate the same products in live mode **with the same lookup keys**
   (post_kit_monthly, paint_kit_monthly, post_paint_monthly, paint_kit_shipping_monthly, local_pickup_monthly, gift_a_year, banner_missions), and turn on Stripe Tax with your Alabama registration.
 - Swap the Netlify variable to your `sk_live_` key and redeploy.
