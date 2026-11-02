@@ -17,3 +17,9 @@
   to = "/404.html"
   status = 404
   force = true
+
+# Social graphics: allow the browser to fetch them when scheduling posts
+[[headers]]
+  for = "/social/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
