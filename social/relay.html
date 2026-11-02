@@ -11,8 +11,9 @@
     files.push({ name: n, type: r.headers.get("content-type") || "", buf: await r.arrayBuffer() });
   }
   const allowed = ["https://business.facebook.com", "https://www.facebook.com", "https://www.tiktok.com"];
-  if (window.opener) for (const o of allowed) { try { window.opener.postMessage({ ppoFiles: files }, o); } catch (e) {} }
+  const targets = [window.opener, window.parent !== window ? window.parent : null].filter(Boolean);
+  for (const t of targets) for (const o of allowed) { try { t.postMessage({ ppoFiles: files }, o); } catch (e) {} }
   document.querySelector("p").textContent = "Sent " + files.length + " file(s). You can close this tab.";
-  setTimeout(() => window.close(), 1500);
+  if (window.opener) setTimeout(() => window.close(), 1500);
 })();
 </script>
