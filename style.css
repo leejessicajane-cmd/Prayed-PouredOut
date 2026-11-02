@@ -38,7 +38,8 @@ footer { text-align: center; color: var(--muted); font-size: .8rem; padding: 24p
 .card-digital { border-top-color: var(--sage); }
 .tag { font-family: system-ui, sans-serif; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--sage); margin: 0 0 4px; font-weight: 600; }
 .btn, .card a.btn { display: block; text-align: center; text-decoration: none; margin-top: auto; background: var(--sage); color: #fff; border: 0; border-radius: 6px; padding: 12px; font-size: 1rem; cursor: pointer; font-family: system-ui, sans-serif; }
-.btn:hover { background: #5c8669; color: #fff; }
+.btn:hover, .fine a.btn:hover { background: #5c8669; color: #fff; }
+.fine a.btn, .card a.btn { color: #fff; }
 .btn.big { margin: 14px 0; font-size: 1.05rem; padding: 14px; }
 .dl .small-note { font-size: .85rem; color: var(--muted); }
 .email-form { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 10px 0; }
