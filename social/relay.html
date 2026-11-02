@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><title>Sending graphics…</title>
+<p style="font-family:system-ui;padding:20px">Sending graphics to the post composer…</p>
+<script>
+(async () => {
+  const names = (new URLSearchParams(location.search).get("f") || "").split(",").filter(Boolean);
+  const files = [];
+  for (const n of names) {
+    if (!/^[\w.-]+$/.test(n)) continue;
+    const r = await fetch("/social/" + n);
+    if (!r.ok) continue;
+    files.push({ name: n, type: r.headers.get("content-type") || "", buf: await r.arrayBuffer() });
+  }
+  const allowed = ["https://business.facebook.com", "https://www.facebook.com", "https://www.tiktok.com"];
+  if (window.opener) for (const o of allowed) { try { window.opener.postMessage({ ppoFiles: files }, o); } catch (e) {} }
+  document.querySelector("p").textContent = "Sent " + files.length + " file(s). You can close this tab.";
+  setTimeout(() => window.close(), 1500);
+})();
+</script>
