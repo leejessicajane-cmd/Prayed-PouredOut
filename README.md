@@ -15,3 +15,9 @@ Check in Stripe → Subscriptions that the next invoice date is the 20th and tha
   (post_kit_monthly, paint_kit_monthly, post_paint_monthly, paint_kit_shipping_monthly, local_pickup_monthly, gift_a_year, banner_missions), and turn on Stripe Tax with your Alabama registration.
 - Swap the Netlify variable to your `sk_live_` key and redeploy.
 - In `public/index.html`, replace the "Manage or cancel my subscription" link with the live customer portal link (Settings → Billing → Customer portal).
+
+## Digital kits ($5 instant download)
+- Sold with a Stripe Payment Link that redirects to `/download.html?session_id={CHECKOUT_SESSION_ID}`.
+- `netlify/functions/download.js` checks the Stripe checkout is paid and that it includes a price whose lookup key is in `KITS`, then sends the PDF. Buyers can also re-download at `/download.html` with the email they paid with.
+- PDFs live in `/private` **encrypted** (`.pdf.enc`), because this repo is public. The key is the Netlify environment variable `KIT_KEY`.
+- New month: create a $5 price with lookup key `digital_kit_YYYY_MM`, encrypt the PDF with the same key into `/private`, add it to `KITS`, and point a payment link at the new price.

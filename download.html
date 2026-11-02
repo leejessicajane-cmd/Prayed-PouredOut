@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Your download — Prayed &amp; Poured Out</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <p class="eyebrow">Digital Post Kit</p>
+  <h1 id="title">Your download</h1>
+  <p class="tagline" id="tagline">Grace upon grace · John 1:16</p>
+</header>
+
+<main class="fine center dl">
+  <div id="ready" hidden>
+    <p>Thank you! Your printable kit is ready. A receipt is on its way to <strong id="email">your email</strong>.</p>
+    <div id="links"></div>
+    <p class="small-note">Print at 100% (“Actual size”). Pages 2–3 on regular paper, page 4 on cardstock.
+      Page 5 is optional: print it on the back of page 4 for a postcard you can mail.</p>
+    <p class="small-note">On a phone? Tap the button, then use Share → Save to Files (or Print) to keep it.</p>
+  </div>
+
+  <div id="checking"><p>Getting your kit ready…</p></div>
+
+  <div id="lookup" hidden>
+    <h3>Re-download your kit</h3>
+    <p>Enter the email you used when you paid.</p>
+    <form id="emailForm" class="email-form">
+      <input type="email" id="emailInput" required placeholder="you@example.com" autocomplete="email">
+      <button type="submit" class="btn">Find my kit</button>
+    </form>
+  </div>
+
+  <p id="err" role="status"></p>
+  <p>Questions? Email <a href="mailto:prayedandpouredout@gmail.com">prayedandpouredout@gmail.com</a>.</p>
+  <p><a href="/">Back to Prayed &amp; Poured Out</a></p>
+</main>
+
+<script>
+  const fn = "/.netlify/functions/download";
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const sid = params.get("session_id");
+
+  function showLinks(kits, query) {
+    $("links").innerHTML = "";
+    kits.forEach((k) => {
+      const a = document.createElement("a");
+      a.className = "btn big";
+      a.href = `${fn}?${query}&kit=${encodeURIComponent(k.id)}`;
+      a.textContent = "Download: " + k.title;
+      $("links").appendChild(a);
+    });
+    $("checking").hidden = true;
+    $("ready").hidden = false;
+  }
+
+  async function check() {
+    if (!sid) { $("checking").hidden = true; $("lookup").hidden = false; return; }
+    try {
+      const res = await fetch(`${fn}?session_id=${encodeURIComponent(sid)}&check=1`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      if (data.email) $("email").textContent = data.email;
+      showLinks(data.kits, "session_id=" + encodeURIComponent(sid));
+    } catch (e) {
+      $("checking").hidden = true; $("lookup").hidden = false;
+      $("err").textContent = (e && e.message) || "We couldn't load your download. Try your email below.";
+    }
+  }
+
+  $("emailForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    $("err").textContent = "";
+    const email = $("emailInput").value.trim();
+    try {
+      const res = await fetch(`${fn}?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+      $("email").textContent = email;
+      $("lookup").hidden = true;
+      showLinks(data.kits, "email=" + encodeURIComponent(email));
+    } catch (e) {
+      $("err").textContent = (e && e.message) || "Something went wrong. Please try again.";
+    }
+  });
+
+  check();
+</script>
+</body>
+</html>
